@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import api from '../api/client'
 import AppShell from '../components/AppShell'
+import CandidateDetailModal from '../components/CandidateDetailModal'
 
 const STAGES = [
   { key: 'submitted', label: 'Submitted', note: 'Awaiting screening' },
@@ -63,6 +64,7 @@ export default function CandidatesPage() {
   const [loading, setLoading] = useState(true)
   const [composer, setComposer] = useState(emptyComposer)
   const [interviewEditor, setInterviewEditor] = useState(emptyInterviewEditor)
+  const [detailCandidate, setDetailCandidate] = useState(null)
 
   async function load() {
     setLoading(true)
@@ -89,11 +91,11 @@ export default function CandidatesPage() {
   }
 
   async function exportExcel() {
-    const res = await api.get('/onboarding/export-candidates', { responseType: 'blob' })
+    const res = await api.get('/onboarding/export', { responseType: 'blob' })
     const url = window.URL.createObjectURL(new Blob([res.data]))
     const a = document.createElement('a')
     a.href = url
-    a.download = 'candidates-export.xlsx'
+    a.download = 'onboarding-export.xlsx'
     a.click()
     window.URL.revokeObjectURL(url)
   }
@@ -191,7 +193,7 @@ export default function CandidatesPage() {
             onClick={exportExcel}
             className="text-sm bg-ink text-signal rounded-full px-4 py-2 font-medium hover:opacity-90"
           >
-            Export candidates (Excel)
+            Export onboarding (Excel)
           </button>
         </div>
 
@@ -252,14 +254,17 @@ export default function CandidatesPage() {
                   const isInterviewOpen = interviewEditor.openFor === c.application_id
                   return (
                     <div key={c.application_id} className="bg-white rounded-2xl p-5">
-                      <div className="flex items-center gap-3 mb-4">
+                      <div
+                        className="flex items-center gap-3 mb-4 cursor-pointer group"
+                        onClick={() => setDetailCandidate(c)}
+                      >
                         <div
                           className={`w-10 h-10 rounded-full flex items-center justify-center font-display font-bold text-sm shrink-0 ${avatar.bg} ${avatar.text}`}
                         >
                           {initials(name)}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-semibold truncate">{name}</p>
+                          <p className="font-semibold truncate group-hover:underline">{name}</p>
                           <p className="text-xs text-ink/50 truncate">
                             {c.position_applied || 'No position specified'}
                           </p>
@@ -408,6 +413,7 @@ export default function CandidatesPage() {
           ))}
         </div>
       </div>
+      <CandidateDetailModal candidate={detailCandidate} onClose={() => setDetailCandidate(null)} />
     </AppShell>
   )
 }

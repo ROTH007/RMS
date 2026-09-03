@@ -1,4 +1,9 @@
 import { pool } from '../db/pool.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Public: candidate submits CV or QR intake form
 export async function createCandidate(req, res) {
@@ -77,5 +82,32 @@ export async function getCandidate(req, res) {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error while fetching candidate' });
+  }
+}
+
+export async function downloadCv(req, res) {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      'SELECT cv_file_url, english_name, khmer_name FROM candidates WHERE id = $1',
+      [id]
+    );
+    if (result.rows.length === 0 || !result.rows[0].cv_file_url) {
+      return res.status(404).json({ error: 'No CV file found for this candidate' });
+    }
+    const { cv_file_url, english_name, khmer_name } = result.rows[0];
+    const filename = cv_file_url.split('/').pop();
+    const filePath = path.join(__dirname, '..', '..', 'uploads', filename);
+    const ext = path.extname(filename);
+    const safeName = (english_name || khmer_name || 'candidate').replace(/\s+/g, '_');
+    res.download(filePath, `${safeName}_CV${ext}`, (err) => {
+      if (err && !res.headersSent) {
+        console.error(err);
+        res.status(404).json({ error: 'File could not be found on the server' });
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error while downloading CV' });
   }
 }

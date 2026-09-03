@@ -149,7 +149,7 @@ export default function ApplyPage() {
           <Field label={t.uploadCv}>
             <input
               type="file"
-              accept=".pdf,.doc,.docx"
+              accept=".pdf,.doc,.docx,image/*"
               onChange={(e) => setCvFile(e.target.files[0])}
               className="block w-full text-sm text-ink/70 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-ink file:text-signal file:font-medium"
             />
